@@ -132,7 +132,8 @@ tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT
 cp "$1" "$tmp/wgchk.conf"; chmod 600 "$tmp/wgchk.conf"
 grep -viE "^[[:space:]]*(Address|DNS|MTU|Table|PreUp|PostUp|PreDown|PostDown|SaveConfig)[[:space:]]*=" "$tmp/wgchk.conf" >"$tmp/stripped.conf"
 ip link add wgchk type wireguard
-wg setconf wgchk "$tmp/stripped.conf"'
+# Se lee por stdin: algunas distribuciones confinan a `wg` y le impiden abrir ficheros en /tmp.
+wg setconf wgchk /dev/stdin <"$tmp/stripped.conf"'
 
 validate_wireguard() {
   local dir="${CONFIG_DIR}/wireguard" file mode=""
