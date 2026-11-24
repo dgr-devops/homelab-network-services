@@ -143,6 +143,9 @@ validate_wireguard() {
     return 0
   fi
 
+  # Como root basta un netns (-n); sin root hace falta además un espacio de nombres de usuario (-r).
+  local unshare_flags=-rn
+  ((EUID != 0)) || unshare_flags=-n
   if have_cmd wg-quick && have_cmd wg && have_cmd ip && have_cmd unshare; then
     mode=native
   elif docker_ready; then
@@ -150,7 +153,7 @@ validate_wireguard() {
   fi
   for file in "${files[@]}"; do
     case "$mode" in
-      native) run_check wireguard "${file##*/}" unshare -rn sh -c "$WG_SNIPPET" sh "$file" ;;
+      native) run_check wireguard "${file##*/}" unshare "$unshare_flags" sh -c "$WG_SNIPPET" sh "$file" ;;
       docker)
         run_check wireguard "${file##*/} (Docker ${DOCKER_IMAGE})" docker run --rm --cap-add NET_ADMIN \
           -v "$(realpath "$dir"):/c:ro" "$DOCKER_IMAGE" \
