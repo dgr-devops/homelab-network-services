@@ -174,7 +174,7 @@ están en `-h`.
 Resumen (detalle en [`docs/decisiones.md`](docs/decisiones.md)): no se ha desplegado en un servidor real;
 no se ha arrancado Unbound ni establecido ningún túnel WireGuard (la configuración se valida con el
 kernel, pero sin pares reales); en DHCP solo se prueba DISCOVER → OFFER; no se ha probado IPv6 ni el
-arranque con systemd; y el CI de GitHub aún no se ha ejecutado (el workflow solo está validado con `actionlint`).
+arranque con systemd; y la validación de WireGuard entre dos máquinas reales no se ha hecho: solo se comprueba que el kernel acepta la configuración (sintaxis y claves bien formadas). El CI de GitHub pasa en verde (shellcheck, validación y 60 tests bats, incluido el laboratorio netns).
 
 ## Licencia
 
