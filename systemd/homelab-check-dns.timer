@@ -1,0 +1,12 @@
+# Ejemplo de temporizador de systemd: lanza homelab-check-dns.service cada 5 minutos.
+# Ver homelab-check-dns.service para las instrucciones de instalación.
+
+[Unit]
+Description=Comprobación periódica del DNS del homelab
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=timers.target

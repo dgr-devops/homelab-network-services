@@ -1,0 +1,22 @@
+# Ejemplo de unidad de systemd para scripts/check-dns.sh.
+#
+# Instalación (como root; ajusta la ruta de ExecStart y los nombres a comprobar):
+#   install -m 0644 systemd/homelab-check-dns.* /etc/systemd/system/
+#   systemctl daemon-reload
+#   systemctl enable --now homelab-check-dns.timer
+#
+# check-dns devuelve 1 (respuesta inesperada) o 2 (sin respuesta). SuccessExitStatus=1 hace que el
+# aviso NO cuente como fallo de la unidad y solo el crítico (2) la marque como fallida.
+
+[Unit]
+Description=Comprobación del DNS del homelab (homelab-network-services)
+After=dnsmasq.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/homelab-network-services/scripts/check-dns.sh -s 192.168.50.1 nas.home.arpa=192.168.50.10 gateway.home.arpa=192.168.50.1
+SuccessExitStatus=1
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true

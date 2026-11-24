@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: shellcheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Versión de shellcheck
+        run: shellcheck --version
+      - name: Analizar scripts, librería y laboratorio
+        run: make lint
+
+  validate:
+    name: validar configuraciones
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Instalar las herramientas de red
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nftables dnsmasq unbound wireguard-tools
+      - name: Validar nftables, dnsmasq, unbound y WireGuard
+        # Como root `nft -c` y `wg setconf` hablan con el kernel del runner sin aplicar nada.
+        run: sudo ./scripts/validate.sh
+
+  test:
+    name: bats
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Instalar dependencias de los tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bats nftables dnsmasq dnsutils iputils-ping
+      - name: Permitir espacios de nombres de usuario (restringidos por defecto en Ubuntu 24.04)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Versión de bats
+        run: bats --version
+      - name: Ejecutar tests (incluye el laboratorio netns)
+        run: make test

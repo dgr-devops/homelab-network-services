@@ -5,3 +5,4 @@
 config/wireguard/wg0.conf
 config/wireguard/*.key
 keys/
+build/
