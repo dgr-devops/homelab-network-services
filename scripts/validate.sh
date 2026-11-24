@@ -25,7 +25,7 @@ sin aplicar nada ni tocar el sistema:
   nftables   nft -c -f            (sin root, dentro de un espacio de nombres de usuario/red)
   dnsmasq    dnsmasq --test -C
   unbound    unbound-checkconf
-  wireguard  wg-quick strip + wg setconf en un netns desechable (comprueba claves y rangos)
+  wireguard  wg setconf (sin las opciones de wg-quick) en un netns desechable (comprueba claves y rangos)
 
 Sin componentes se validan los cuatro.
 
@@ -126,11 +126,11 @@ validate_unbound() {
 # SC2016: las comillas simples son intencionadas; el fragmento se expande en el `sh` hijo.
 # shellcheck disable=SC2016
 # Fragmento que se ejecuta con sh: copia el fichero con nombre de interfaz válido, lo despoja de
-# las opciones de wg-quick y lo carga en una interfaz WireGuard recién creada en un netns desechable.
+# las opciones propias de wg-quick (las mismas que quita `wg-quick strip`) y lo carga en una interfaz WireGuard recién creada en un netns desechable.
 readonly WG_SNIPPET='
 tmp="$(mktemp -d)"; trap "rm -rf \"$tmp\"" EXIT
 cp "$1" "$tmp/wgchk.conf"; chmod 600 "$tmp/wgchk.conf"
-wg-quick strip "$tmp/wgchk.conf" >"$tmp/stripped.conf"
+grep -viE "^[[:space:]]*(Address|DNS|MTU|Table|PreUp|PostUp|PreDown|PostDown|SaveConfig)[[:space:]]*=" "$tmp/wgchk.conf" >"$tmp/stripped.conf"
 ip link add wgchk type wireguard
 wg setconf wgchk "$tmp/stripped.conf"'
 
@@ -146,7 +146,7 @@ validate_wireguard() {
   # Como root basta un netns (-n); sin root hace falta además un espacio de nombres de usuario (-r).
   local unshare_flags=-rn
   ((EUID != 0)) || unshare_flags=-n
-  if have_cmd wg-quick && have_cmd wg && have_cmd ip && have_cmd unshare; then
+  if have_cmd wg && have_cmd ip && have_cmd unshare; then
     mode=native
   elif docker_ready; then
     mode=docker
@@ -159,7 +159,7 @@ validate_wireguard() {
           -v "$(realpath "$dir"):/c:ro" "$DOCKER_IMAGE" \
           sh -c "apk add -q --no-cache wireguard-tools >/dev/null; $WG_SNIPPET" sh "/c/${file##*/}"
         ;;
-      *) report wireguard SKIP "${file##*/}: falta wg-quick (usa -d para Docker)" ;;
+      *) report wireguard SKIP "${file##*/}: falta wg (usa -d para Docker)" ;;
     esac
   done
 }

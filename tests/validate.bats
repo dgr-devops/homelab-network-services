@@ -103,7 +103,7 @@ setup() {
   grep -q 'alpine' "${BATS_TEST_TMPDIR}/docker.calls"
 }
 
-@test "con -d usa Docker para WireGuard con NET_ADMIN cuando falta wg-quick" {
+@test "con -d usa Docker para WireGuard con NET_ADMIN cuando falta wg" {
   minimal_path
   make_stub docker 'echo "docker $*" >>"${BATS_TEST_TMPDIR}/docker.calls"; exit 0'
   run bash "${SCRIPTS}/validate.sh" -d -c "$CONF_DIR" wireguard

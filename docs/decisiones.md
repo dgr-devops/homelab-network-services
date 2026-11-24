@@ -57,7 +57,7 @@ Todo lo que se puede comprobar se comprueba **antes** de tocar el sistema, y sin
 | nftables | `nft -c -f` dentro de `unshare -rn` | El kernel acepta el ruleset (sintaxis y semántica), sin cargarlo |
 | dnsmasq | `dnsmasq --test -C` | Sintaxis de la configuración |
 | Unbound | `unbound-checkconf` (local o en Docker) | Sintaxis y valores |
-| WireGuard | `wg-quick strip` + `wg setconf` en un netns desechable | Claves, rangos y claves precompartidas bien formados |
+| WireGuard | `wg setconf` + `wg setconf` en un netns desechable | Claves, rangos y claves precompartidas bien formados |
 
 `unshare -rn` crea un espacio de nombres de usuario y de red donde somos «root» solo ahí: se puede usar
 `nft` y crear interfaces sin privilegios y sin afectar a la red real. Si falta una herramienta
