@@ -27,12 +27,13 @@ jobs:
       - name: Instalar las herramientas de red
         run: |
           sudo apt-get update
-          sudo apt-get install -y nftables dnsmasq unbound wireguard-tools
+          sudo apt-get install -y nftables dnsmasq unbound
       - name: Permitir espacios de nombres de usuario (restringidos por defecto en Ubuntu 24.04)
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Validar nftables, dnsmasq, unbound y WireGuard
-        # Sin root, dentro de un netns de usuario: `nft -c` y `wg setconf` hablan con el kernel sin aplicar nada.
-        run: ./scripts/validate.sh
+        # Sin root: nft -c dentro de un netns de usuario; WireGuard en un contenedor alpine (-d), porque
+        # el `wg` de los runners de Ubuntu no puede abrir ficheros dentro del netns (fopen: Permission denied).
+        run: ./scripts/validate.sh -d
 
   test:
     name: bats
