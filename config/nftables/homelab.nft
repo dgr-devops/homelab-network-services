@@ -1,0 +1,77 @@
+#!/usr/sbin/nft -f
+# homelab.nft — cortafuegos de la pasarela del homelab (DNS + DHCP + WireGuard).
+#
+# Política: todo lo que entra se descarta salvo lo que se permite aquí de forma explícita.
+# Las interfaces y redes son valores de EJEMPLO: ajústalos en las líneas `define`.
+#
+# Validar sin aplicar:  nft -c -f config/nftables/homelab.nft
+
+flush ruleset
+
+define WAN_IF = "eth0"
+define LAN_IF = "eth1"
+define WG_IF  = "wg0"
+define LAN_NET = 192.168.50.0/24
+define WG_NET  = 10.8.0.0/24
+define WG_PORT = 51820
+
+table inet filter {
+  # Redes que pueden usar los servicios de la propia pasarela (DNS, SSH).
+  set admin_nets {
+    type ipv4_addr
+    flags interval
+    elements = { 192.168.50.0/24, 10.8.0.0/24 }
+  }
+
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    ct state invalid drop
+    ct state established,related accept
+    iif "lo" accept
+
+    # ICMP: imprescindible en IPv6 (descubrimiento de vecinos), limitado el ping.
+    ip protocol icmp icmp type echo-request limit rate 10/second accept
+    ip protocol icmp icmp type { destination-unreachable, time-exceeded } accept
+    meta l4proto ipv6-icmp accept
+
+    # DHCP: los clientes aún no tienen IP, así que se filtra por interfaz y no por origen.
+    iifname $LAN_IF udp sport 68 udp dport 67 accept
+
+    # DNS (dnsmasq) para la LAN y la VPN.
+    iifname { $LAN_IF, $WG_IF } ip saddr @admin_nets udp dport 53 accept
+    iifname { $LAN_IF, $WG_IF } ip saddr @admin_nets tcp dport 53 accept
+
+    # SSH solo desde la LAN y la VPN, con límite de intentos nuevos.
+    iifname { $LAN_IF, $WG_IF } ip saddr @admin_nets tcp dport 22 ct state new limit rate 6/minute accept
+
+    # WireGuard desde Internet.
+    iifname $WAN_IF udp dport $WG_PORT accept
+
+    # Lo descartado se registra con límite, para no llenar el disco.
+    limit rate 5/minute log prefix "nft-input-drop: " level info
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+
+    ct state invalid drop
+    ct state established,related accept
+
+    # La LAN sale a Internet; la VPN llega a la LAN; nada entra desde Internet.
+    iifname $LAN_IF oifname $WAN_IF accept
+    iifname $WG_IF oifname $LAN_IF ip saddr $WG_NET ip daddr $LAN_NET accept
+    iifname $WG_IF oifname $WAN_IF ip saddr $WG_NET accept
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+}
+
+table ip nat {
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+    oifname $WAN_IF ip saddr { $LAN_NET, $WG_NET } masquerade
+  }
+}

@@ -1,0 +1,20 @@
+# wg0-client.conf.example — cliente WireGuard (portátil o móvil) hacia el homelab (ejemplo).
+#
+# LAS CLAVES SON DE EJEMPLO (véase wg0-server.conf.example). 203.0.113.10 es una IP de
+# documentación (RFC 5737): sustitúyela por la IP pública o el nombre DDNS de tu router.
+#
+# Túnel dividido: solo el tráfico hacia la LAN y la VPN pasa por el túnel, no toda la navegación.
+
+[Interface]
+Address = 10.8.0.2/32
+PrivateKey = RVhBTVBMRS1DTElFTlQtUFJJVkFURS1LRVktTk9UUkU=
+# El DNS del homelab resuelve los nombres *.home.arpa.
+DNS = 192.168.50.1
+
+[Peer]
+PublicKey = RVhBTVBMRS1TRVJWRVItUFVCTElDLUtFWS0tTk9UUkU=
+PresharedKey = RVhBTVBMRS1QUkVTSEFSRUQtS0VZLS0tTk9UUkVBTC0=
+Endpoint = 203.0.113.10:51820
+AllowedIPs = 10.8.0.0/24, 192.168.50.0/24
+# Mantiene abierto el NAT del router si el cliente está detrás de uno.
+PersistentKeepalive = 25

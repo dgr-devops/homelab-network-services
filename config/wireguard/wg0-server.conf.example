@@ -1,0 +1,22 @@
+# wg0-server.conf.example — servidor WireGuard de la pasarela (ejemplo).
+#
+# LAS CLAVES DE ESTE FICHERO SON DE EJEMPLO Y NO PROTEGEN NADA: son 32 bytes de texto
+# (decodifican a «EXAMPLE-...») para que el fichero sea sintácticamente válido.
+# Genera las tuyas con scripts/wg-keygen.sh y guarda el resultado como wg0.conf
+# (ignorado por git). deploy.sh se niega a instalar claves de ejemplo.
+#
+# Red de la VPN: 10.8.0.0/24 (servidor .1, clientes .2 en adelante).
+
+[Interface]
+Address = 10.8.0.1/24
+ListenPort = 51820
+PrivateKey = RVhBTVBMRS1TRVJWRVItUFJJVkFURS1LRVktTk9UUkU=
+# Con nftables el reenvío y el NAT los define homelab.nft; solo hace falta activar el reenvío.
+PostUp = sysctl -q -w net.ipv4.ip_forward=1
+SaveConfig = false
+
+# Cliente 1: portátil de ejemplo.
+[Peer]
+PublicKey = RVhBTVBMRS1DTElFTlQtUFVCTElDLUtFWS0tTk9UUkU=
+PresharedKey = RVhBTVBMRS1QUkVTSEFSRUQtS0VZLS0tTk9UUkVBTC0=
+AllowedIPs = 10.8.0.2/32
